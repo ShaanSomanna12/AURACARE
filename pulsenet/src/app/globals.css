@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Cyber-Industrial Base Colors */
+  --color-obsidian: #0B0F19;
+  --color-cyber-surface: #1E293B;
+  
+  /* Accent Colors */
+  --color-electric-indigo: #6366f1;
+  --color-cyan-glow: #06b6d4;
+
+  /* Triage Medical Palette */
+  --color-triage-red: #EF4444;
+  --color-triage-yellow: #F59E0B;
+  --color-triage-green: #10B981;
+  --color-medical-blue: #0284C7;
+  
+  /* Fonts */
+  --font-space: "Space Grotesk", sans-serif;
+  --font-jakarta: "Plus Jakarta Sans", sans-serif;
+}
+
+:root {
+  --background: var(--color-obsidian);
+  --foreground: #f8fafc; /* Slate 50 for good contrast on dark */
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jakarta);
+}
+
+/* Reusable Glassmorphism utility class */
+@utility glass-card {
+  background-color: rgba(30, 41, 59, 0.5); /* Cyber Surface with 50% opacity */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+@utility glass-card-hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.15); /* Subtle cyan outer bloom */
+}
+
+/* Custom focus ring */
+@utility focus-ring-cyan {
+  outline: 2px solid var(--color-cyan-glow);
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+}
