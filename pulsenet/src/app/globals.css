@@ -18,6 +18,14 @@
   /* Fonts */
   --font-space: "Space Grotesk", sans-serif;
   --font-jakarta: "Plus Jakarta Sans", sans-serif;
+  
+  --animate-shimmer: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 :root {
