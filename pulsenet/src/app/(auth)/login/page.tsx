@@ -20,7 +20,6 @@ export default function LoginPage() {
     setError(null);
     const formData = new FormData(e.currentTarget);
     
-    // If sign up, we must append the selected role manually since it's not a standard input
     if (mode === 'SIGNUP') {
       formData.append('role', role);
     }
@@ -39,213 +38,204 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#050B14] relative overflow-hidden font-sans text-slate-200">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#FFF5F2] relative overflow-hidden font-sans">
       
-      {/* 🌌 STUNNING ANIMATED BACKGROUND 🌌 */}
+      {/* 🌸 PEACH & WHITE ANIMATED BACKGROUND 🌸 */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.05)_0%,_transparent_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#FFE4D6_0%,_transparent_50%),_radial-gradient(circle_at_bottom_left,_#FFFFFF_0%,_transparent_50%)]" />
         
-        {/* Floating Neon Orbs */}
+        {/* Soft Floating Orbs */}
         <motion.div 
-          animate={{ y: [0, -40, 0], x: [0, 30, 0], scale: [1, 1.2, 1] }} 
+          animate={{ y: [0, -30, 0], x: [0, 20, 0] }} 
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[10%] left-[15%] w-96 h-96 bg-[var(--color-electric-indigo)] rounded-full mix-blend-screen filter blur-[120px] opacity-20 z-0" 
+          className="absolute top-[5%] left-[10%] w-96 h-96 bg-[#FFD1BA] rounded-full mix-blend-multiply filter blur-[100px] opacity-40 z-0" 
         />
         <motion.div 
-          animate={{ y: [0, 50, 0], x: [0, -20, 0], scale: [1, 1.5, 1] }} 
+          animate={{ y: [0, 40, 0], x: [0, -20, 0] }} 
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[10%] right-[15%] w-[30rem] h-[30rem] bg-[var(--color-triage-red)] rounded-full mix-blend-screen filter blur-[150px] opacity-10 z-0" 
+          className="absolute bottom-[10%] right-[10%] w-[30rem] h-[30rem] bg-[#FFE8E0] rounded-full mix-blend-multiply filter blur-[120px] opacity-60 z-0" 
         />
         <motion.div 
-          animate={{ y: [0, -20, 0], x: [0, -40, 0], scale: [1, 1.1, 1] }} 
+          animate={{ y: [0, -20, 0], x: [0, -40, 0] }} 
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[40%] right-[30%] w-80 h-80 bg-[var(--color-cyan-glow)] rounded-full mix-blend-screen filter blur-[100px] opacity-20 z-0" 
+          className="absolute top-[40%] right-[20%] w-80 h-80 bg-[#FFFFFF] rounded-full mix-blend-overlay filter blur-[80px] opacity-80 z-0" 
         />
         
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
+        {/* Very subtle medical plus pattern overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,140,105,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,140,105,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
-      {/* 🚀 LOGIN/SIGNUP CARD 🚀 */}
+      {/* 🏥 LOGIN/SIGNUP CARD 🏥 */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-[440px] relative z-10"
       >
-        <div className="glass-card rounded-[2rem] p-8 sm:p-10 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden backdrop-blur-2xl bg-[#0B101E]/60">
+        <div className="bg-white/80 backdrop-blur-2xl rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(255,140,105,0.15)] border border-white relative overflow-hidden">
           
-          {/* Animated border glow line at the top */}
-          <motion.div 
-            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[var(--color-cyan-glow)] to-transparent"
-            animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-            style={{ backgroundSize: '200% 100%' }}
-          />
+          {/* Subtle peach accent line at the top */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FFB89E] via-[#FF8C69] to-[#FFB89E]" />
 
-          {/* Logo Section */}
-          <div className="flex flex-col items-center mb-8 relative">
+          {/* Optional: Dark Header block to make the neon logo pop without clashing with the white page */}
+          <div className="w-full bg-[#0B0F19] pt-10 pb-8 flex flex-col items-center relative overflow-hidden rounded-t-[2rem]">
+            {/* Dark background glow for logo */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.15)_0%,_transparent_70%)]" />
+            
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.8, type: "spring" }}
-              className="relative w-full flex justify-center mb-6"
+              className="relative w-full flex justify-center z-10"
             >
-              {/* Fallback glow if image is missing */}
-              <div className="absolute inset-0 bg-[var(--color-triage-red)] blur-3xl opacity-20 rounded-full" />
-              
               <div className="relative w-32 h-32 flex items-center justify-center">
                 <Image 
                   src="/logo.png" 
                   alt="Tvarit Logo" 
                   fill
-                  className="object-contain drop-shadow-[0_0_25px_rgba(239,68,68,0.4)]"
+                  className="object-contain drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]"
                   priority
                 />
               </div>
             </motion.div>
+          </div>
 
+          <div className="p-8 sm:p-10 pt-8">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-center"
+              transition={{ delay: 0.3 }}
+              className="text-center mb-8"
             >
-              <h1 className="text-3xl font-space font-bold text-white tracking-wider mb-2">TVARIT</h1>
-              <p className="text-white/50 text-sm tracking-widest uppercase">
-                {mode === 'LOGIN' ? 'Session Initialization' : 'Operator Registration'}
+              <h1 className="text-2xl font-space font-bold text-slate-800 tracking-wide mb-1">
+                {mode === 'LOGIN' ? 'Welcome to Tvarit' : 'Join the Network'}
+              </h1>
+              <p className="text-slate-500 text-sm">
+                {mode === 'LOGIN' ? 'Sign in to access your medical dashboard' : 'Register as a healthcare operator'}
               </p>
             </motion.div>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-4 rounded-xl bg-[var(--color-triage-red)]/10 border border-[var(--color-triage-red)]/30 flex items-center gap-3 backdrop-blur-md">
-                    <AlertCircle className="w-5 h-5 text-[var(--color-triage-red)] flex-shrink-0" />
-                    <span className="text-sm text-red-200 font-medium">{error}</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.div 
-              className="space-y-4"
-              initial={false}
-              animate={{ opacity: 1 }}
-            >
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-[var(--color-cyan-glow)] transition-colors" />
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/30 outline-none focus:border-[var(--color-cyan-glow)] focus:bg-black/60 transition-all font-sans shadow-inner"
-                  placeholder="Operator ID (Email)"
-                  defaultValue={mode === 'LOGIN' ? 'worker@test.com' : ''}
-                />
-              </div>
-
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-[var(--color-cyan-glow)] transition-colors" />
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  className="w-full bg-black/40 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/30 outline-none focus:border-[var(--color-cyan-glow)] focus:bg-black/60 transition-all font-sans shadow-inner"
-                  placeholder="Passcode"
-                  defaultValue={mode === 'LOGIN' ? 'password123' : ''}
-                />
-              </div>
-
-              {/* ROLE SELECTOR (Only shown in Sign Up mode) */}
-              <AnimatePresence>
-                {mode === 'SIGNUP' && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="pt-2 overflow-hidden"
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                    exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                    className="overflow-hidden"
                   >
-                    <label className="block text-xs font-space text-white/50 uppercase tracking-widest mb-3 text-center">Select Operator Role</label>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setRole('CUSTOMER_PHC')}
-                        className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                          role === 'CUSTOMER_PHC' 
-                            ? 'bg-[var(--color-cyan-glow)]/20 border-[var(--color-cyan-glow)] shadow-[0_0_15px_rgba(6,182,212,0.2)]' 
-                            : 'bg-black/40 border-white/10 hover:border-white/30 text-white/50'
-                        }`}
-                      >
-                        <Building2 className={`w-6 h-6 ${role === 'CUSTOMER_PHC' ? 'text-[var(--color-cyan-glow)]' : ''}`} />
-                        <span className={`text-xs font-bold ${role === 'CUSTOMER_PHC' ? 'text-white' : ''}`}>PHC Worker</span>
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setRole('DOCTOR_ADMIN')}
-                        className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-                          role === 'DOCTOR_ADMIN' 
-                            ? 'bg-[var(--color-triage-red)]/20 border-[var(--color-triage-red)] shadow-[0_0_15px_rgba(239,68,68,0.2)]' 
-                            : 'bg-black/40 border-white/10 hover:border-white/30 text-white/50'
-                        }`}
-                      >
-                        <Stethoscope className={`w-6 h-6 ${role === 'DOCTOR_ADMIN' ? 'text-[var(--color-triage-red)]' : ''}`} />
-                        <span className={`text-xs font-bold ${role === 'DOCTOR_ADMIN' ? 'text-white' : ''}`}>Hospital Doctor</span>
-                      </button>
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                      <span className="text-sm text-red-700 font-medium">{error}</span>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-            </motion.div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={isPending}
-              className={`w-full py-4 mt-4 text-white font-space font-bold tracking-widest uppercase rounded-xl transition-all flex items-center justify-center gap-3 group relative overflow-hidden
-                ${mode === 'LOGIN' 
-                  ? 'bg-[var(--color-electric-indigo)] hover:bg-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.4)]' 
-                  : 'bg-[var(--color-cyan-glow)] hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)] text-black'
-                }`}
-            >
-              {/* Button shine effect */}
-              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              
-              {isPending ? (
-                <div className="flex items-center gap-2 z-10 relative">
-                  <Activity className="w-5 h-5 animate-pulse" />
-                  <span>Processing...</span>
+              <motion.div 
+                className="space-y-4"
+                initial={false}
+                animate={{ opacity: 1 }}
+              >
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#FF8C69] transition-colors" />
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-800 placeholder-slate-400 outline-none focus:border-[#FF8C69] focus:bg-white focus:ring-4 focus:ring-[#FF8C69]/10 transition-all font-sans"
+                    placeholder="Email Address"
+                    defaultValue={mode === 'LOGIN' ? 'worker@test.com' : ''}
+                  />
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 z-10 relative">
-                  {mode === 'LOGIN' ? <LogIn className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                  <span>{mode === 'LOGIN' ? 'Initiate Session' : 'Create Account'}</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </div>
-              )}
-            </motion.button>
-          </form>
 
-          {/* Toggle Mode Button */}
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-white/50 hover:text-white text-sm font-sans transition-colors border-b border-transparent hover:border-white/50 pb-0.5"
-            >
-              {mode === 'LOGIN' ? "Need a clearance code? Sign Up" : "Already have clearance? Log In"}
-            </button>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-[#FF8C69] transition-colors" />
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-800 placeholder-slate-400 outline-none focus:border-[#FF8C69] focus:bg-white focus:ring-4 focus:ring-[#FF8C69]/10 transition-all font-sans"
+                    placeholder="Password"
+                    defaultValue={mode === 'LOGIN' ? 'password123' : ''}
+                  />
+                </div>
+
+                {/* ROLE SELECTOR (Only shown in Sign Up mode) */}
+                <AnimatePresence>
+                  {mode === 'SIGNUP' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pt-2 overflow-hidden"
+                    >
+                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 text-center">Select Your Role</label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setRole('CUSTOMER_PHC')}
+                          className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                            role === 'CUSTOMER_PHC' 
+                              ? 'bg-[#FF8C69]/10 border-[#FF8C69] text-[#FF8C69]' 
+                              : 'bg-white border-slate-200 hover:border-[#FF8C69]/50 text-slate-500'
+                          }`}
+                        >
+                          <Building2 className="w-6 h-6" />
+                          <span className="text-xs font-bold">PHC Worker</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setRole('DOCTOR_ADMIN')}
+                          className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
+                            role === 'DOCTOR_ADMIN' 
+                              ? 'bg-[#FF8C69]/10 border-[#FF8C69] text-[#FF8C69]' 
+                              : 'bg-white border-slate-200 hover:border-[#FF8C69]/50 text-slate-500'
+                          }`}
+                        >
+                          <Stethoscope className="w-6 h-6" />
+                          <span className="text-xs font-bold">Hospital Doctor</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+              </motion.div>
+
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isPending}
+                className="w-full py-4 mt-4 bg-[#FF8C69] hover:bg-[#FF7F50] text-white font-space font-bold tracking-wide rounded-xl transition-all shadow-[0_8px_20px_rgba(255,140,105,0.3)] hover:shadow-[0_8px_25px_rgba(255,140,105,0.4)] disabled:opacity-70 flex items-center justify-center gap-2"
+              >
+                {isPending ? (
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 animate-pulse" />
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    {mode === 'LOGIN' ? <LogIn className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                    <span>{mode === 'LOGIN' ? 'Sign In' : 'Create Account'}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </motion.button>
+            </form>
+
+            {/* Toggle Mode Button */}
+            <div className="mt-8 text-center">
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors border-b border-transparent hover:border-slate-800 pb-0.5"
+              >
+                {mode === 'LOGIN' ? "New to Tvarit? Create an account" : "Already registered? Sign in"}
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
