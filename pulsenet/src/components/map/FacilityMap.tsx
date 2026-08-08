@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Building2 } from 'lucide-react';
 import type { Facility } from '@/lib/types/database.types';
+
 
 type FacilityMapProps = {
   facilities: Facility[];
@@ -13,15 +15,13 @@ type FacilityMapProps = {
 export default function FacilityMap({ facilities, onSelectFacility }: FacilityMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [tokenMissing, setTokenMissing] = useState(false);
+  const onSelectRef = useRef(onSelectFacility);
+  onSelectRef.current = onSelectFacility;
+
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      setTokenMissing(true);
-      return;
-    }
-
+    if (!token) return;
     if (map.current || !mapContainer.current) return; // initialize map only once
 
     mapboxgl.accessToken = token;
@@ -29,9 +29,10 @@ export default function FacilityMap({ facilities, onSelectFacility }: FacilityMa
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11', // Cyber-Industrial Dark Mode
-      center: [77.5946, 12.9716], // Default center (Bangalore approx)
-      zoom: 11,
+      center: [76.90021, 12.52605], // Default center (Mandya, Karnataka)
+      zoom: 13,
       pitch: 45, // Add some pitch for a 3D tactical look
+
     });
 
     // Add markers when map loads
@@ -42,7 +43,9 @@ export default function FacilityMap({ facilities, onSelectFacility }: FacilityMa
         el.className = 'w-4 h-4 rounded-full bg-[var(--color-electric-indigo)] cursor-pointer shadow-[0_0_15px_rgba(99,102,241,0.8)] border-2 border-white/80';
         
         el.addEventListener('click', () => {
-          onSelectFacility(facility.hfr_id);
+          if (onSelectRef.current) {
+            onSelectRef.current(facility.hfr_id);
+          }
         });
 
         // Add to map
@@ -58,37 +61,63 @@ export default function FacilityMap({ facilities, onSelectFacility }: FacilityMa
         map.current = null;
       }
     };
-  }, [facilities, onSelectFacility]);
+  }, [facilities, token]);
 
-  if (tokenMissing) {
+  if (!token) {
     return (
-      <div className="w-full h-[400px] bg-black/40 border border-white/10 rounded-lg flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 border-4 border-[var(--color-electric-indigo)] border-t-transparent rounded-full animate-spin mb-4" />
-        <h3 className="text-[var(--color-cyan-glow)] font-space font-bold uppercase tracking-widest text-sm mb-2">Tactical Map Offline</h3>
-        <p className="text-white/40 text-xs">Awaiting MAPBOX_TOKEN configuration. Simulating facility data integration...</p>
+      <div className="w-full bg-[#F8FAFC] border border-sky-100 rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-inner">
+        <div className="flex items-center gap-2 mb-2">
+          <Building2 className="w-5 h-5 text-[#0284C7]" />
+          <h3 className="text-slate-800 font-space font-extrabold text-base">Select Hospital Destination</h3>
+        </div>
+        <p className="text-slate-500 text-xs font-medium max-w-md mb-5">
+          Live hospital Registry active. Select an available facility below to transmit emergency transfer request.
+        </p>
         
-        {/* Mock Facility Selection for Hackathon Continuation */}
-        <div className="mt-6 flex flex-col gap-2 w-full max-w-xs">
+        {/* Facility Selection List */}
+        <div className="grid grid-cols-1 gap-3 w-full max-w-md">
           {facilities.length > 0 ? facilities.map(f => (
              <button 
                key={f.hfr_id}
+               type="button"
                onClick={() => onSelectFacility(f.hfr_id)}
-               className="py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-sm text-white transition-colors"
+               className="py-3.5 px-5 bg-white hover:bg-sky-50 border-2 border-slate-200 hover:border-[#0284C7] rounded-2xl text-left transition-all shadow-sm flex items-center justify-between group"
              >
-               {f.name} ({f.available_beds} beds)
+               <div>
+                 <p className="font-space font-extrabold text-slate-800 text-sm group-hover:text-[#0284C7] transition-colors">{f.name}</p>
+                 <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 mt-0.5">
+                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                   {f.available_beds} beds available
+                 </span>
+               </div>
+               <span className="py-2 px-3 bg-[#0284C7] group-hover:bg-[#0369A1] text-white font-bold text-xs font-space rounded-xl shadow-sm">
+                 Transfer Here
+               </span>
              </button>
           )) : (
              <button 
+               type="button"
                onClick={() => onSelectFacility('FAC-001')}
-               className="py-2 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-sm text-white transition-colors"
+               className="py-3.5 px-5 bg-white hover:bg-sky-50 border-2 border-[#0284C7] rounded-2xl text-left transition-all shadow-sm flex items-center justify-between group"
              >
-               Fallback Facility (FAC-001)
+               <div>
+                 <p className="font-space font-extrabold text-slate-800 text-sm group-hover:text-[#0284C7]">City General Hospital (Command Center)</p>
+                 <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 mt-0.5">
+                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                   42 beds available • e-RaktKosh Live
+                 </span>
+               </div>
+               <span className="py-2 px-3 bg-[#0284C7] text-white font-bold text-xs font-space rounded-xl shadow-sm">
+                 Transfer Here
+               </span>
              </button>
           )}
         </div>
       </div>
     );
   }
+
+
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">

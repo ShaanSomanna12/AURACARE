@@ -13,12 +13,13 @@ type RealtimeDashboardFeedProps = {
 
 export default function RealtimeDashboardFeed({ initialReferrals, onAccept, facilityId }: RealtimeDashboardFeedProps) {
   const [referrals, setReferrals] = useState<Referral[]>(initialReferrals);
-  const supabase = createClient();
 
   useEffect(() => {
-    // Highly resilient real-time subscription
+    const supabase = createClient();
+    const channelName = `public:referrals:${facilityId}`;
+    
     const channel = supabase
-      .channel('public:referrals')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'referrals', filter: `target_facility_id=eq.${facilityId}` },
@@ -37,7 +38,7 @@ export default function RealtimeDashboardFeed({ initialReferrals, onAccept, faci
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime WebSocket Connected');
+          console.log('✅ Realtime WebSocket Connected:', facilityId);
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           console.error('❌ Realtime WebSocket Disconnected');
         }
@@ -46,7 +47,8 @@ export default function RealtimeDashboardFeed({ initialReferrals, onAccept, faci
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, facilityId]);
+  }, [facilityId]);
 
   return <DashboardFeed referrals={referrals} onAccept={onAccept} />;
 }
+

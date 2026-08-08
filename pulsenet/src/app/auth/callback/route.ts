@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/patient';
-  const role = searchParams.get('role') ?? 'PATIENT'; // default to patient for OAuth
+  const next = searchParams.get('next') ?? '/phc';
+  const role = searchParams.get('role') ?? 'CUSTOMER_PHC';
 
   if (code) {
     const supabase = await createClient();
@@ -31,13 +31,12 @@ export async function GET(request: Request) {
       const finalRole = profile?.role || role;
       if (finalRole === 'DOCTOR_ADMIN') {
         return NextResponse.redirect(`${origin}/hospital`);
-      } else if (finalRole === 'CUSTOMER_PHC') {
-        return NextResponse.redirect(`${origin}/phc`);
       } else {
-        return NextResponse.redirect(`${origin}/patient`);
+        return NextResponse.redirect(`${origin}/phc`);
       }
     }
   }
+
 
   // return the user to an error page with some instructions
   return NextResponse.redirect(`${origin}/login?error=OAuth_Failed`);

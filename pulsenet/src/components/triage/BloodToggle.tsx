@@ -18,24 +18,22 @@ export default function BloodToggle({ selected, onChange }: BloodToggleProps) {
         return (
           <motion.button
             key={type}
+            type="button"
             onClick={() => onChange(type)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             className={`
-              relative flex flex-col items-center justify-center p-3 rounded-md transition-all duration-200
+              relative flex flex-col items-center justify-center p-3.5 rounded-2xl border-2 font-space transition-all duration-200 shadow-sm
               ${isSelected 
-                ? 'bg-white/10 text-white border-b-2 border-[var(--color-electric-indigo)] focus-ring-cyan' 
-                : 'bg-black/20 text-white/50 border border-white/5 hover:bg-white/5'}
+                ? 'bg-[#F0F9FF] border-[#0284C7] text-[#0284C7] shadow-[0_4px_12px_rgba(2,132,199,0.15)] font-extrabold' 
+                : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50/50 font-bold'}
             `}
           >
-            {/* Inner glow effect for selected state */}
-            {isSelected && (
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-electric-indigo)]/20 to-transparent rounded-md pointer-events-none" />
-            )}
-            <span className="font-sans font-bold text-lg z-10">{type}</span>
+            <span className="text-lg tracking-tight z-10">{type}</span>
           </motion.button>
         );
       })}
     </div>
   );
 }
+

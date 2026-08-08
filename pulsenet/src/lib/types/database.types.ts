@@ -1,4 +1,5 @@
-export type UserRole = 'CUSTOMER_PHC' | 'DOCTOR_ADMIN';
+export type UserRole = 'CUSTOMER_PHC' | 'DOCTOR_ADMIN' | 'PATIENT' | 'RECEPTIONIST';
+
 
 export type TriageLevel = 'RED' | 'YELLOW' | 'GREEN';
 

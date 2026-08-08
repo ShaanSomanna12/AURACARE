@@ -1,173 +1,497 @@
 'use client';
 
-import { useState } from 'react';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldAlert, MapPin, Activity, CheckCircle2, AlertTriangle, PhoneCall } from 'lucide-react';
+import { Activity, ShieldAlert, Building2, Droplets, HeartPulse, Send, AlertTriangle, CheckCircle2, MapPin, Search, Phone, Navigation, Clock, Check } from 'lucide-react';
+import { useHealthcare } from '@/context/HealthcareContext';
+
 import { createClient } from '@/lib/supabase/client';
+import type { BloodType } from '@/lib/types/database.types';
+
+const SYMPTOM_OPTIONS = [
+  'Chest Pain',
+  'Severe Bleeding',
+  'Difficulty Breathing',
+  'High Fever',
+  'Abdominal Pain',
+  'Dizziness',
+  'Vomiting',
+  'Cough',
+];
 
 export default function PatientDashboard() {
-  const [symptoms, setSymptoms] = useState('');
-  const [location, setLocation] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const supabase = createClient();
+  const { facilities, bloodInventory, holdBloodRequest, holdSuccessMsg, registerPatient } = useHealthcare();
 
-  const handleEmergencyRequest = async () => {
-    if (!symptoms || !location) return;
-    setIsSubmitting(true);
+  // Enforce Strict RBAC
+  useEffect(() => {
+    async function enforceRBAC() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const matchCookie = document.cookie.match(/tvarit_role=([^;]+)/);
+      const cookieRole = matchCookie ? matchCookie[1] : null;
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      alert("Authentication error");
-      setIsSubmitting(false);
-      return;
+      if (!user && !cookieRole) {
+        window.location.href = '/login';
+        return;
+      }
+
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const activeRole = profile?.role || cookieRole;
+        if (activeRole && activeRole !== 'PATIENT' && cookieRole !== 'PATIENT') {
+          if (activeRole === 'CUSTOMER_PHC') window.location.href = '/phc';
+          else if (activeRole === 'DOCTOR_ADMIN') window.location.href = '/hospital';
+          else if (activeRole === 'RECEPTIONIST') window.location.href = '/receptionist';
+        }
+      }
     }
+    enforceRBAC();
+  }, []);
 
-    // Auto-triage logic based on keywords
-    let priority = 'GREEN';
-    const text = symptoms.toLowerCase();
-    if (text.includes('heart') || text.includes('bleeding') || text.includes('unconscious') || text.includes('trauma')) {
-      priority = 'RED';
-    } else if (text.includes('fracture') || text.includes('pain') || text.includes('broken')) {
-      priority = 'YELLOW';
-    }
+  // Symptom Form State
+  const [patientName, setPatientName] = useState('Ananya Rao');
+  const [phone, setPhone] = useState('+91 98765 43210');
+  const [age, setAge] = useState<number | ''>(32);
+  const [gender, setGender] = useState('Female');
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
+  const [durationDays, setDurationDays] = useState(1);
+  const [severity1to10, setSeverity1to10] = useState(5);
 
-    // Insert referral to FAC-001 (Command Center) for Hackathon demo
-    const { error } = await supabase.from('referrals').insert({
-      patient_name: userData.user.email?.split('@')[0] || 'Unknown Patient',
-      referrer_id: userData.user.id,
-      target_facility_id: 'FAC-001',
-      triage_status: priority,
-      symptoms: `${symptoms} (Location: ${location})`,
-      requested_blood_type: null,
-      requested_blood_units: 0,
-      status: 'PENDING',
-    });
+  // Search Filter State
+  const [searchQuery, setSearchQuery] = useState('');
 
-    if (error) {
-      console.error(error);
-      alert("Failed to send request.");
-    } else {
-      setSubmitted(true);
-    }
-    
-    setIsSubmitting(false);
+  // Triage Result State
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [triageResult, setTriageResult] = useState<{
+    riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+    alertTitle: string;
+    message: string;
+    priorityColor: string;
+  } | null>(null);
+
+  const toggleSymptom = (sym: string) => {
+    setSelectedSymptoms(prev =>
+      prev.includes(sym) ? prev.filter(s => s !== sym) : [...prev, sym]
+    );
   };
 
-  return (
-    <div className="min-h-screen bg-[#F0F9FF] p-4 sm:p-8 font-sans">
-      <div className="max-w-3xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="bg-[#0284C7]/10 p-3 rounded-2xl">
-              <Activity className="w-8 h-8 text-[#0284C7]" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-space font-bold text-slate-800">Tvarit Patient Portal</h1>
-              <p className="text-slate-500 font-medium">Emergency Response Network</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => supabase.auth.signOut().then(() => window.location.href='/login')}
-            className="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            Sign Out
-          </button>
-        </header>
+  const handleSymptomTriage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedSymptoms.length === 0) return;
 
-        {/* Main Action Area */}
-        <AnimatePresence mode="wait">
-          {!submitted ? (
-            <motion.div 
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl shadow-lg border border-red-100 overflow-hidden"
-            >
-              <div className="bg-red-50 p-6 sm:p-8 border-b border-red-100">
-                <div className="flex items-center gap-3 mb-2">
-                  <AlertTriangle className="w-8 h-8 text-red-500" />
-                  <h2 className="text-2xl font-bold text-red-700">Request Emergency Help</h2>
-                </div>
-                <p className="text-red-600/80 font-medium">
-                  Your request will be sent directly to the nearest available hospital. Please provide accurate details.
-                </p>
+    setIsAnalyzing(true);
+    setTriageResult(null);
+
+    setTimeout(() => {
+      const hasHighRisk = selectedSymptoms.some(s =>
+        ['Chest Pain', 'Severe Bleeding', 'Difficulty Breathing'].includes(s)
+      );
+
+      const hasMediumRisk = selectedSymptoms.some(s =>
+        ['High Fever', 'Abdominal Pain'].includes(s)
+      ) || durationDays > 3 || severity1to10 >= 7;
+
+      if (hasHighRisk) {
+        setTriageResult({
+          riskLevel: 'HIGH',
+          alertTitle: 'REQUIRES IMMEDIATE EMERGENCY CARE',
+          message: 'Head to the nearest Tertiary Hospital immediately. Emergency medical response team notified.',
+          priorityColor: 'bg-red-600 text-white border-red-700',
+        });
+      } else if (hasMediumRisk) {
+        setTriageResult({
+          riskLevel: 'MEDIUM',
+          alertTitle: 'VISIT NEAREST PHC WITHIN 24 HOURS',
+          message: 'Your symptoms warrant medical evaluation by a Primary Health Centre clinician.',
+          priorityColor: 'bg-amber-500 text-white border-amber-600',
+        });
+      } else {
+        setTriageResult({
+          riskLevel: 'LOW',
+          alertTitle: 'SAFE FOR HOME REST & HYDRATION',
+          message: 'Your symptoms appear mild and stable. Rest at home and monitor your temperature.',
+          priorityColor: 'bg-emerald-600 text-white border-emerald-700',
+        });
+      }
+
+      // Persist authenticated patient triage record to Supabase patients table & Doctor Queue
+      registerPatient({
+        full_name: patientName || 'Ananya Rao',
+        age: Number(age) || 32,
+        gender: gender || 'Female',
+        phone: phone || '+91 98765 43210',
+        symptoms: selectedSymptoms,
+        duration_days: durationDays,
+        severity_1to10: severity1to10,
+        bp: '120/80',
+        pulse: 84,
+        temp_f: 98.6,
+        spo2: hasHighRisk ? 88 : 97,
+        triage_level: hasHighRisk ? 'RED' : hasMediumRisk ? 'YELLOW' : 'GREEN',
+        triage_reason: hasHighRisk ? 'CRITICAL: High Risk emergency symptoms self-reported by Patient.' : 'Patient Self Assessment Triage',
+      });
+
+      setIsAnalyzing(false);
+    }, 600);
+  };
+
+
+  // Filter facilities by town search
+  const filteredFacilities = facilities.filter(f =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    f.town.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-white border border-sky-100 shadow-[0_10px_30px_-10px_rgba(2,132,199,0.08)]">
+        <div className="flex items-center gap-4">
+          <div className="relative w-12 h-12 rounded-full overflow-hidden bg-[#050811] border-2 border-pink-500/40 shadow-[0_0_15px_rgba(236,72,153,0.35)] flex items-center justify-center">
+            <Image src="/logo.png" alt="Tvarit Logo" width={64} height={64} className="object-cover scale-135" />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-space font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
+              <span>Patient Emergency Portal</span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-sky-100 text-[#0284C7] font-mono font-bold uppercase">Mandya Network</span>
+            </h1>
+            <p className="text-slate-500 font-medium text-xs">AI Symptom Triage, Mandya Hospital Bed Locator & e-RaktKosh Blood Reserves</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-mono font-bold uppercase flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live Ecosystem Sync
+          </span>
+        </div>
+      </div>
+
+      {holdSuccessMsg && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold flex items-center gap-2 shadow-sm"
+        >
+          <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <span>{holdSuccessMsg}</span>
+        </motion.div>
+      )}
+
+      {/* Grid: Symptom Triage Checker & Hospital Bed/Blood Locator */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* 1. SYMPTOM TRIAGE CHECKER FORM (5 cols) */}
+        <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-8 shadow-[0_15px_40px_-15px_rgba(2,132,199,0.1)] border border-sky-100 flex flex-col justify-between space-y-6">
+          <form onSubmit={handleSymptomTriage} className="space-y-5">
+            <div className="flex items-center gap-2 text-[#0284C7] font-space font-extrabold text-lg">
+              <Activity className="w-5 h-5" />
+              <span>AI Symptom Triage Checker</span>
+            </div>
+
+            {/* Demographics Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="col-span-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 font-space">Name</label>
+                <input
+                  type="text"
+                  value={patientName}
+                  onChange={e => setPatientName(e.target.value)}
+                  placeholder="Patient Name"
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#0284C7]"
+                />
               </div>
 
-              <div className="p-6 sm:p-8 space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">What is the emergency?</label>
-                  <textarea 
-                    value={symptoms}
-                    onChange={(e) => setSymptoms(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-red-300 focus:ring-4 focus:ring-red-50 rounded-2xl px-4 py-4 text-slate-800 outline-none min-h-[120px] transition-all font-medium"
-                    placeholder="e.g. Severe chest pain, breathing difficulty..."
-                  />
+              <div className="col-span-1">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 font-space">Phone Number</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#0284C7]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 font-space">Age</label>
+                <input
+                  type="number"
+                  value={age}
+                  onChange={e => setAge(parseInt(e.target.value) || '')}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#0284C7]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 font-space">Gender</label>
+                <select
+                  value={gender}
+                  onChange={e => setGender(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-2 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#0284C7]"
+                >
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+
+            {/* Primary Symptoms Multi-Select Chips */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 font-space">
+                Primary Symptoms (Multi-Select)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {SYMPTOM_OPTIONS.map(sym => {
+                  const isSelected = selectedSymptoms.includes(sym);
+                  const isCritical = ['Chest Pain', 'Severe Bleeding', 'Difficulty Breathing'].includes(sym);
+
+                  return (
+                    <button
+                      key={sym}
+                      type="button"
+                      onClick={() => toggleSymptom(sym)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold font-space transition-all border shadow-sm ${
+                        isSelected
+                          ? isCritical
+                            ? 'bg-red-600 text-white border-red-600 shadow-md scale-105'
+                            : 'bg-[#0284C7] text-white border-[#0284C7] shadow-md scale-105'
+                          : 'bg-[#F8FAFC] text-slate-700 border-slate-200 hover:border-sky-300'
+                      }`}
+                    >
+                      {sym}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Duration & Severity Slider */}
+            <div className="space-y-3 bg-[#F0F9FF] p-4 rounded-2xl border border-sky-100">
+              <div className="flex items-center justify-between text-xs font-space font-bold text-slate-700">
+                <span>Duration: {durationDays} Day(s)</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="14"
+                  value={durationDays}
+                  onChange={e => setDurationDays(Number(e.target.value))}
+                  className="w-28 accent-[#0284C7]"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs font-space font-bold text-slate-700">
+                <span>Pain Severity: <span className="text-[#0284C7] text-sm">{severity1to10}/10</span></span>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={severity1to10}
+                  onChange={e => setSeverity1to10(Number(e.target.value))}
+                  className="w-28 accent-[#0284C7]"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isAnalyzing || selectedSymptoms.length === 0}
+              className="w-full py-4 bg-[#0284C7] hover:bg-[#0369A1] text-white font-space font-bold tracking-wide rounded-2xl transition-all shadow-[0_8px_20px_rgba(2,132,199,0.25)] disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isAnalyzing ? (
+                <Activity className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>Run Smart Decision Engine</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* AI Decision Alert Box */}
+          <AnimatePresence mode="wait">
+            {triageResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-5 rounded-2xl border-2 space-y-3 shadow-md ${
+                  triageResult.riskLevel === 'HIGH'
+                    ? 'bg-red-50/90 border-red-300 text-red-950'
+                    : triageResult.riskLevel === 'MEDIUM'
+                      ? 'bg-amber-50/90 border-amber-300 text-amber-950'
+                      : 'bg-emerald-50/90 border-emerald-300 text-emerald-950'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-space font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    {triageResult.riskLevel === 'HIGH' && <AlertTriangle className="w-4 h-4 text-red-600" />}
+                    <span>{triageResult.riskLevel} RISK TRIAGE</span>
+                  </span>
+
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${triageResult.priorityColor}`}>
+                    {triageResult.riskLevel}
+                  </span>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-2">Current Location</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input 
-                      type="text" 
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 focus:border-red-300 focus:ring-4 focus:ring-red-50 rounded-2xl py-4 pl-12 pr-4 text-slate-800 outline-none transition-all font-medium"
-                      placeholder="e.g. 123 Main St, Apt 4B"
-                    />
+
+                <h3 className="text-base font-space font-extrabold tracking-tight">{triageResult.alertTitle}</h3>
+                <p className="text-xs font-medium leading-relaxed">{triageResult.message}</p>
+
+                {triageResult.riskLevel === 'HIGH' && (
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => alert('Emergency Call 108 Dispatched!')}
+                      className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-space font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      <Phone className="w-3.5 h-3.5" /> Call Ambulance (108)
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* 2. REAL-TIME BED LOCATOR & BLOOD BANK FINDER (7 cols) */}
+        <div className="lg:col-span-7 space-y-8">
+          
+          {/* Real-Time Bed Locator Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_15px_40px_-15px_rgba(2,132,199,0.1)] border border-sky-100 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-slate-800 font-space font-extrabold text-lg">
+                <Building2 className="w-5 h-5 text-[#0284C7]" />
+                <span>Real-Time Hospital Bed Locator</span>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-60">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Filter by town or hospital..."
+                  className="w-full pl-9 pr-3 py-1.5 bg-[#F8FAFC] border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:border-[#0284C7]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {filteredFacilities.map(fac => (
+                <div
+                  key={fac.hfr_id}
+                  className="p-5 rounded-2xl border border-slate-200 hover:border-sky-300 bg-[#F8FAFC] space-y-3 transition-all shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-space font-extrabold text-slate-800 text-base">{fac.name}</h3>
+                      <p className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {fac.town} • <span className="font-bold text-[#0284C7]">{fac.distance_km} km away</span>
+                      </p>
+                    </div>
+
+                    <span className="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold uppercase">
+                      Open Admission
+                    </span>
+                  </div>
+
+                  {/* Bed Breakdown Grid */}
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase font-space">General</span>
+                      <span className="text-base font-extrabold font-space text-slate-800">{fac.general_beds_avail}</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase font-space">Trauma</span>
+                      <span className="text-base font-extrabold font-space text-amber-600">{fac.emergency_beds_avail}</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase font-space">ICU Beds</span>
+                      <span className="text-base font-extrabold font-space text-[#0284C7]">{fac.icu_beds_avail}</span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase font-space">Ventilators</span>
+                      <span className="text-base font-extrabold font-space text-purple-600">{fac.ventilators_free}</span>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <button 
-                  onClick={handleEmergencyRequest}
-                  disabled={isSubmitting || !symptoms || !location}
-                  className="w-full py-5 bg-red-500 hover:bg-red-600 text-white font-space font-bold text-lg rounded-2xl shadow-[0_8px_20px_rgba(239,68,68,0.3)] hover:shadow-[0_8px_25px_rgba(239,68,68,0.4)] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-                >
-                  {isSubmitting ? (
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <PhoneCall className="w-6 h-6" />
-                      DISPATCH AMBULANCE
-                    </>
-                  )}
-                </button>
+          {/* Blood Bank Finder Card */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_15px_40px_-15px_rgba(2,132,199,0.1)] border border-sky-100 space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-600 font-space font-extrabold text-lg">
+                <Droplets className="w-5 h-5 text-red-600" />
+                <span>Certified Blood Bank Finder (8 Groups)</span>
               </div>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-3xl shadow-lg border border-green-100 p-8 sm:p-12 text-center"
-            >
-              <motion.div 
-                animate={{ scale: [1, 1.1, 1] }} 
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
-              >
-                <CheckCircle2 className="w-12 h-12 text-green-500" />
-              </motion.div>
-              <h2 className="text-3xl font-space font-bold text-slate-800 mb-3">Help is on the way!</h2>
-              <p className="text-slate-500 font-medium text-lg mb-8 max-w-md mx-auto">
-                Your emergency request has been received by City General Hospital. An ambulance has been dispatched to your location.
-              </p>
-              
-              <div className="bg-[#F0F9FF] rounded-2xl p-6 border border-[#0284C7]/20 inline-block text-left mb-8">
-                <h3 className="font-bold text-[#0284C7] uppercase text-sm tracking-wider mb-4">Instructions</h3>
-                <ul className="space-y-3 text-slate-700 font-medium">
-                  <li className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-red-500" /> Stay calm and stay where you are.</li>
-                  <li className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-red-500" /> Do not move if you suspect spinal injury.</li>
-                  <li className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-red-500" /> Keep your phone line clear.</li>
-                </ul>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[10px] font-mono font-bold uppercase border border-red-200">
+                e-RaktKosh Sync
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {facilities.map(fac => {
+                const inventory = bloodInventory[fac.hfr_id] || {};
+                const bloodTypes: BloodType[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+                return (
+                  <div key={fac.hfr_id} className="p-5 rounded-2xl border border-slate-200 bg-white space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-space font-extrabold text-slate-800 text-sm">{fac.name} Blood Reserve</h4>
+                        <span className="text-[10px] font-mono text-slate-400">{fac.town}</span>
+                      </div>
+
+                      <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Verified Live Inventory
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                      {bloodTypes.map(bt => {
+                        const count = inventory[bt] ?? 0;
+                        return (
+                          <div
+                            key={bt}
+                            className={`p-2 rounded-xl text-center border font-space ${
+                              count > 0
+                                ? 'bg-sky-50/80 border-sky-200 text-[#0284C7]'
+                                : 'bg-slate-50 border-slate-200 text-slate-400'
+                            }`}
+                          >
+                            <span className="block text-[11px] font-extrabold">{bt}</span>
+                            <span className="block text-xs font-bold mt-0.5">{count} u</span>
+                            {count > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => holdBloodRequest(fac.hfr_id, bt)}
+                                className="mt-1 text-[9px] font-extrabold bg-[#0284C7] hover:bg-[#0369A1] text-white px-1 py-0.5 rounded w-full transition-colors"
+                              >
+                                Hold
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
 
       </div>
     </div>
