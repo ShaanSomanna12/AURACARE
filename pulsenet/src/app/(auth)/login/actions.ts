@@ -32,6 +32,8 @@ export async function loginUser(formData: FormData) {
 
   if (profile?.role === 'DOCTOR_ADMIN') {
     redirect('/hospital');
+  } else if (profile?.role === 'PATIENT') {
+    redirect('/patient');
   } else {
     redirect('/phc');
   }
@@ -75,6 +77,8 @@ export async function signUpUser(formData: FormData) {
 
   if (role === 'DOCTOR_ADMIN') {
     redirect('/hospital');
+  } else if (role === 'PATIENT') {
+    redirect('/patient');
   } else {
     redirect('/phc');
   }
